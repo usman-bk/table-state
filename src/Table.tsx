@@ -3,7 +3,7 @@ import { Grid } from "./Grid";
 import { createRowStore } from "./store";
 import { httpApi } from "./api";
 import { useUrlQuery } from "./useUrlQuery";
-import { PAGE_SIZES } from "./url";
+import { PAGE_SIZES, serializeQuery } from "./url";
 import { STATUSES, type Api, type SortKey, type Status } from "./types";
 
 export function Table({ api = httpApi, height }: { api?: Api; height?: number }) {
@@ -20,10 +20,12 @@ export function Table({ api = httpApi, height }: { api?: Api; height?: number })
   // A shared link, or a filter narrowed in another tab, can leave the page
   // number past the end. The server then answers with an empty page.
   useEffect(() => {
-    if (snap.status === "ready" && query.page > pages) {
+    // Only trust the total if it answers this query. Right after the URL changes
+    // the snapshot still holds the previous result, whose page count is wrong.
+    if (snap.loadedFor === serializeQuery(query) && query.page > pages) {
       setQuery({ ...query, page: pages }, { replace: true });
     }
-  }, [snap.status, query, pages, setQuery]);
+  }, [snap.loadedFor, query, pages, setQuery]);
 
   function onSort(key: SortKey) {
     const cur = query.sort;

@@ -1,9 +1,12 @@
 import type { Api, Patch, Query, Row } from "./types";
+import { serializeQuery } from "./url";
 
 export interface Snapshot {
   /** what the user sees: server rows with unconfirmed edits laid over them */
   rows: Row[];
   total: number;
+  /** the query the rows and total answer, which may lag the one in the URL */
+  loadedFor: string | null;
   status: "idle" | "loading" | "ready" | "error";
   error: string | null;
   /** text of the last failed edit, cleared by the next edit */
@@ -34,7 +37,7 @@ interface Pending {
 export function createRowStore(api: Api): RowStore {
   let base: Row[] = [];
   let pending: Pending[] = [];
-  let state: Snapshot = { rows: [], total: 0, status: "idle", error: null, editError: null };
+  let state: Snapshot = { rows: [], total: 0, loadedFor: null, status: "idle", error: null, editError: null };
   const listeners = new Set<() => void>();
 
   // Each load takes a number. Only the newest number may write to the state.
@@ -81,7 +84,7 @@ export function createRowStore(api: Api): RowStore {
         if (mine !== loadSeq) return;
         base = overlay(page.rows, confirmed);
         confirmed = [];
-        publish({ total: page.total, status: "ready" });
+        publish({ total: page.total, loadedFor: serializeQuery(query), status: "ready" });
       } catch (e) {
         if (mine !== loadSeq) return;
         publish({ status: "error", error: e instanceof Error ? e.message : String(e) });

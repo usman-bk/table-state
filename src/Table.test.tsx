@@ -85,6 +85,20 @@ describe("table against the mock server", () => {
     await waitFor(() => expect(firstCol(0).length).toBeGreaterThan(0));
   });
 
+  it("the clamp judges a page by the result it belongs to, not the previous one", async () => {
+    useDb(2000);
+    window.history.replaceState(null, "", "/?pageSize=50&status=active");
+    render(<Table height={320} />);
+    await screen.findByText("Page 1 of 14");
+    // follow a link to page 30 of the unfiltered list: 40 pages, so 30 is valid
+    act(() => {
+      window.history.pushState(null, "", "/?pageSize=50&page=30");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    await screen.findByText("Page 30 of 40");
+    expect(window.location.search).toBe("?pageSize=50&page=30");
+  });
+
   it("changing the filter goes back to page 1", async () => {
     useDb(2000);
     const user = userEvent.setup();
