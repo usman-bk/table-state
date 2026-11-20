@@ -17,6 +17,14 @@ export function Table({ api = httpApi, height }: { api?: Api; height?: number })
 
   const pages = Math.max(1, Math.ceil(snap.total / query.pageSize));
 
+  // A shared link, or a filter narrowed in another tab, can leave the page
+  // number past the end. The server then answers with an empty page.
+  useEffect(() => {
+    if (snap.status === "ready" && query.page > pages) {
+      setQuery({ ...query, page: pages }, { replace: true });
+    }
+  }, [snap.status, query, pages, setQuery]);
+
   function onSort(key: SortKey) {
     const cur = query.sort;
     const sort =

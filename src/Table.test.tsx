@@ -76,6 +76,15 @@ describe("table against the mock server", () => {
     );
   });
 
+  it("a page number past the end after narrowing the filter lands on the last page, not an empty one", async () => {
+    useDb(2000);
+    window.history.replaceState(null, "", "/?pageSize=50&status=active&page=30");
+    render(<Table height={320} />);
+    await screen.findByText("Page 14 of 14");
+    expect(window.location.search).toBe("?status=active&page=14&pageSize=50");
+    await waitFor(() => expect(firstCol(0).length).toBeGreaterThan(0));
+  });
+
   it("changing the filter goes back to page 1", async () => {
     useDb(2000);
     const user = userEvent.setup();
