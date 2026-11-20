@@ -56,6 +56,14 @@ export function Grid({
   const n = rows.length;
   const first = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
   const last = Math.min(n, Math.ceil((scrollTop + height) / rowHeight) + overscan);
+  // The row holding focus stays mounted even when scrolled far away. If the
+  // browser removes the focused element, focus falls back to <body> and the
+  // next arrow key goes nowhere.
+  const indices: number[] = [];
+  for (let i = first; i < last; i++) indices.push(i);
+  if (active.row >= 0 && active.row < n && (active.row < first || active.row >= last)) {
+    indices.push(active.row);
+  }
   const visible = Math.max(1, Math.floor(height / rowHeight));
 
   function move(next: Pos) {
@@ -157,8 +165,8 @@ export function Grid({
         style={{ height, overflow: "auto", position: "relative" }}
       >
         <div style={{ height: n * rowHeight, position: "relative" }}>
-          {rows.slice(first, last).map((r, k) => {
-            const i = first + k;
+          {indices.map((i) => {
+            const r = rows[i]!;
             return (
               <div
                 key={r.id}

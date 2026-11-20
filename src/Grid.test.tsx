@@ -164,4 +164,14 @@ describe("virtualisation", () => {
     expect(screen.queryByText("alder-harbor-1")).toBeNull();
     expect(document.querySelector('[data-pos="20000:0"]')).toHaveTextContent("20001");
   });
+
+  it("keeps keyboard focus when the focused row scrolls out of the window", async () => {
+    const { user } = setup({ rows: makeRows(50000), total: 50000 });
+    await user.click(cell("0:1"));
+    const scroller = screen.getByRole("rowgroup");
+    scroller.scrollTop = 32 * 30000;
+    fireEvent.scroll(scroller);
+    expect(screen.getByRole("grid").contains(document.activeElement)).toBe(true);
+    expect(document.activeElement).not.toBe(document.body);
+  });
 });
