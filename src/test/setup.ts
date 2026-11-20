@@ -7,7 +7,7 @@ const realFetch = globalThis.fetch;
 globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) =>
   realFetch(typeof input === "string" && input.startsWith("/") ? window.location.origin + input : input, init)) as typeof fetch;
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => {
   cleanup();
   server.resetHandlers();
