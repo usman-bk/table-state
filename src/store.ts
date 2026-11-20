@@ -19,6 +19,9 @@ export interface RowStore {
 export function createRowStore(api: Api): RowStore {
   let state: Snapshot = { rows: [], total: 0, status: "idle", error: null, editError: null };
   const listeners = new Set<() => void>();
+  // Each load takes a number. Only the newest number may write to the state.
+  let loadSeq = 0;
+  let abort: AbortController | null = null;
 
   function set(next: Partial<Snapshot>) {
     state = { ...state, ...next };
@@ -36,11 +39,16 @@ export function createRowStore(api: Api): RowStore {
     },
 
     async load(query) {
+      const mine = ++loadSeq;
+      abort?.abort();
+      abort = new AbortController();
       set({ status: "loading", error: null });
       try {
-        const page = await api.fetchRows(query);
+        const page = await api.fetchRows(query, abort.signal);
+        if (mine !== loadSeq) return;
         set({ rows: page.rows, total: page.total, status: "ready" });
       } catch (e) {
+        if (mine !== loadSeq) return;
         set({ status: "error", error: e instanceof Error ? e.message : String(e) });
       }
     },
